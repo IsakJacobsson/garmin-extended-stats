@@ -65,18 +65,18 @@ def activity_metrics_over_time_section(df):
 
 def multiselect(choices, description):
     default = choices[0] if len(choices) > 0 else None
-    selected_activities = st.multiselect(
+    selected = st.multiselect(
         description,
         choices,
         default=default,
         placeholder="Select activity types",
     )
-    return selected_activities
+    return selected
 
 
 def selectbox(choices, description):
-    selected_metric = st.selectbox(description, choices)
-    return selected_metric
+    selected = st.selectbox(description, choices)
+    return selected
 
 
 def plot_metric(df, metric, fmt):
