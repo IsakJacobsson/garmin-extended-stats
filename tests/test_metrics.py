@@ -1,7 +1,8 @@
+import numpy as np
 import pandas as pd
 import pytest
 
-from metrics import SUMMABLE_COLUMNS, aggregate_metric_over_time, get_valid_metrics
+from metrics import aggregate_metric_over_time, get_activities, get_valid_metrics
 
 
 @pytest.fixture
@@ -15,6 +16,14 @@ def sample_df():
             "Steg": [None, 4000, 8000],  # contains NaN
         }
     )
+
+
+def test_get_activites():
+    df = pd.DataFrame({"Aktivitetstyp": ["Löpning", "Cycling", "Styrketräning"]})
+
+    activities = get_activities(df)
+
+    assert set(activities) == {"Löpning", "Cycling", "Styrketräning"}
 
 
 def test_get_valid_metrics_excludes_columns_with_nan(sample_df):

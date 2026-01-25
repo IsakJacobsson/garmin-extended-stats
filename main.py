@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 
 from load_data import load_data
-from metrics import aggregate_metric_over_time, get_valid_metrics
+from metrics import aggregate_metric_over_time, get_activities, get_valid_metrics
 
 
 def activity_metrics_over_time_section(df):
@@ -14,7 +14,8 @@ def activity_metrics_over_time_section(df):
     col1, col2 = st.columns(2)
 
     with col1:
-        selected_activities = activity_multiselector(df)
+        activities = get_activities(df)
+        selected_activities = activity_multiselector(df, activities)
 
     activity_df = filter_activities(df, selected_activities)
 
@@ -46,8 +47,7 @@ def activity_metrics_over_time_section(df):
     )  # Year
 
 
-def activity_multiselector(df):
-    activities = df["Aktivitetstyp"].unique()
+def activity_multiselector(df, activities):
     selected_activities = st.multiselect(
         "Activity type",
         activities,
