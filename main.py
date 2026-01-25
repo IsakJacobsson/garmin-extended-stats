@@ -28,7 +28,6 @@ def activity_metrics_over_time_section(df):
 
     activity_df = filter_activities(df, selected_activities)
 
-    # Create tabs for different metrics
     with col2:
         valid_metrics = get_valid_metrics(activity_df)
         selected_metric = metric_selector(valid_metrics)
