@@ -6,6 +6,7 @@ from metrics import aggregate_metric_over_time, get_activities, get_summable_met
 
 
 def activity_metrics_over_time_section(df):
+    df = df.copy()
     st.header("Activity metrics over time")
 
     start_date = df["Datum"].min()
@@ -17,13 +18,13 @@ def activity_metrics_over_time_section(df):
         activities = get_activities(df)
         selected_activities = multiselect(activities, "Activity type")
 
-    activity_df = filter_activities(df, selected_activities)
+    df = filter_activities(df, selected_activities)
 
     with col2:
-        valid_metrics = get_summable_metrics(activity_df)
+        valid_metrics = get_summable_metrics(df)
         selected_metric = selectbox(valid_metrics, "Metric")
 
-    activity_df = convert_time_column_to_hours(activity_df)
+    df = convert_time_column_to_hours(df)
 
     if len(selected_activities) == 0:
         st.warning("Please select at least one activity type.")
@@ -33,18 +34,10 @@ def activity_metrics_over_time_section(df):
     tab_day, tab_week, tab_month, tab_year = st.tabs(["Day", "Week", "Month", "Year"])
 
     # Plot each tab
-    plot_metric_tab(
-        activity_df, selected_metric, "D", "%Y-%m-%d", tab_day, start_date, end_date
-    )  # Day
-    plot_metric_tab(
-        activity_df, selected_metric, "W", "%Y-%W", tab_week, start_date, end_date
-    )  # Week
-    plot_metric_tab(
-        activity_df, selected_metric, "M", "%Y-%m", tab_month, start_date, end_date
-    )  # Month
-    plot_metric_tab(
-        activity_df, selected_metric, "Y", "%Y", tab_year, start_date, end_date
-    )  # Year
+    plot_metric_tab(df, selected_metric, "D", "%Y-%m-%d", tab_day, start_date, end_date)
+    plot_metric_tab(df, selected_metric, "W", "%Y-%W", tab_week, start_date, end_date)
+    plot_metric_tab(df, selected_metric, "M", "%Y-%m", tab_month, start_date, end_date)
+    plot_metric_tab(df, selected_metric, "Y", "%Y", tab_year, start_date, end_date)
 
 
 def multiselect(choices, description):
