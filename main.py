@@ -72,7 +72,7 @@ def filter_activities(df, activities):
 def get_valid_metrics(df):
     valid_metrics = []
     for col in SUMMABLE_COLUMNS:
-        if not df[col].isna().any():
+        if col in df.columns and not df[col].isna().any():
             valid_metrics.append(col)
     return valid_metrics
 
