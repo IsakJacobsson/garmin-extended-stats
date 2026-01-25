@@ -7,6 +7,7 @@ from metrics import (
     convert_time_column_to_hours,
     get_activities,
     get_summable_metrics,
+    insert_rest_days,
 )
 
 
@@ -143,3 +144,91 @@ def test_get_summable_metrics_empty_dataframe():
     summable = get_summable_metrics(df)
 
     assert summable == []
+
+
+def test_basic_rest_day_insertion():
+    data = {
+        "Aktivitetstyp": ["Löpning", "Styrketräning"],
+        "Datum": [
+            pd.Timestamp("2026-01-17 10:25:46"),
+            pd.Timestamp("2026-01-19 11:00:00"),
+        ],
+        "Namn": ["Run", "Gym"],
+    }
+    df = pd.DataFrame(data)
+
+    start_date = pd.Timestamp("2026-01-17")
+    end_date = pd.Timestamp("2026-01-20")
+
+    df_with_rest = insert_rest_days(df, start_date, end_date)
+
+    # Should have 4 rows now (2 original + 2 rest days for 18th and 20th)
+    assert len(df_with_rest) == 4
+
+    # Rest day rows should be on missing days
+    rest_days = df_with_rest[df_with_rest["Aktivitetstyp"] == "Rest day"][
+        "Datum"
+    ].dt.date
+    assert set(rest_days) == {
+        pd.Timestamp("2026-01-18").date(),
+        pd.Timestamp("2026-01-20").date(),
+    }
+
+
+def test_multiple_activities_same_day():
+    data = {
+        "Aktivitetstyp": ["Löpning", "Walk"],
+        "Datum": [
+            pd.Timestamp("2026-01-17 10:00:00"),
+            pd.Timestamp("2026-01-17 18:00:00"),
+        ],
+        "Namn": ["Run", "Evening walk"],
+    }
+    df = pd.DataFrame(data)
+
+    start_date = pd.Timestamp("2026-01-17")
+    end_date = pd.Timestamp("2026-01-18")
+
+    df_with_rest = insert_rest_days(df, start_date, end_date)
+
+    # Only one rest day (2026-01-18)
+    rest_days = df_with_rest[df_with_rest["Aktivitetstyp"] == "Rest day"][
+        "Datum"
+    ].dt.date
+    assert list(rest_days) == [pd.Timestamp("2026-01-18").date()]
+
+
+def test_no_rest_days_needed():
+    data = {
+        "Aktivitetstyp": ["Löpning"],
+        "Datum": [pd.Timestamp("2026-01-17 10:00:00")],
+        "Namn": ["Run"],
+    }
+    df = pd.DataFrame(data)
+
+    start_date = pd.Timestamp("2026-01-17")
+    end_date = pd.Timestamp("2026-01-17")
+
+    df_with_rest = insert_rest_days(df, start_date, end_date)
+
+    # No rest day should be added
+    assert len(df_with_rest) == 1
+    assert "Rest day" not in df_with_rest["Aktivitetstyp"].values
+
+
+def test_original_timestamps_preserved():
+    data = {
+        "Aktivitetstyp": ["Löpning"],
+        "Datum": [pd.Timestamp("2026-01-17 10:25:46")],
+        "Namn": ["Run"],
+    }
+    df = pd.DataFrame(data)
+
+    start_date = pd.Timestamp("2026-01-17")
+    end_date = pd.Timestamp("2026-01-18")
+
+    df_with_rest = insert_rest_days(df, start_date, end_date)
+
+    # Original timestamp unchanged
+    original_row = df_with_rest[df_with_rest["Aktivitetstyp"] == "Löpning"].iloc[0]
+    assert original_row["Datum"] == pd.Timestamp("2026-01-17 10:25:46")

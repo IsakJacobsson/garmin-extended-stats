@@ -7,6 +7,7 @@ from metrics import (
     convert_time_column_to_hours,
     get_activities,
     get_summable_metrics,
+    insert_rest_days,
 )
 
 
@@ -87,6 +88,48 @@ def plot_metric(df, metric, fmt):
     st.bar_chart(df.set_index("PeriodStr")[metric])
 
 
+def rest_day_stats_section(df):
+    st.header("Rest day stats")
+
+    # This has to be done before filtering the df, since the full period is
+    # desired regardless of which activities are selected
+    start_date = df["Datum"].min()
+    end_date = df["Datum"].max()
+
+    activities = get_activities(df)
+    active_activities = st.pills(
+        "Active day activity types",
+        activities,
+        selection_mode="multi",
+        default=activities,
+    )
+
+    df = filter_activities(df, active_activities)
+
+    df = insert_rest_days(df, start_date, end_date)
+
+    df = filter_activities(df, ["Rest day"])
+
+    # Create tabs for different resolutions
+    tab_info = [
+        ("Day", "D", "%Y-%m-%d"),
+        ("Week", "W", "%Y-%W"),
+        ("Month", "M", "%Y-%m"),
+        ("Year", "Y", "%Y"),
+    ]
+
+    selected_metric = "Rest count"
+
+    tabs = st.tabs([label for label, _, _ in tab_info])
+
+    for tab, (_, freq, date_format) in zip(tabs, tab_info):
+        agg_df = aggregate_metric_over_time(
+            df, selected_metric, freq, start_date, end_date
+        )
+        with tab:
+            plot_metric(agg_df, selected_metric, date_format)
+
+
 def main():
     st.title("Garmin extended data")
 
@@ -95,6 +138,8 @@ def main():
         return
 
     activity_metrics_over_time_section(df)
+
+    rest_day_stats_section(df)
 
 
 if __name__ == "__main__":

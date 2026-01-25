@@ -43,3 +43,46 @@ def get_summable_metrics(df):
         if col in df.columns and not df[col].isna().any():
             valid_metrics.append(col)
     return valid_metrics
+
+
+def insert_rest_days(df, start_date, end_date):
+    df = df.copy()
+
+    # Ensure 'Datum' is datetime
+    df["Datum"] = pd.to_datetime(df["Datum"])
+
+    # Normalize to just dates for comparison
+    df["Day"] = df["Datum"].dt.normalize()
+
+    # Extract just the date part for comparison
+    df["DateOnly"] = df["Datum"].dt.date
+
+    # Full date range
+    all_days = pd.date_range(start=start_date, end=end_date, freq="D").date
+
+    # Days that already have any activity
+    active_days = set(df["DateOnly"].unique())
+
+    # Days with no activity
+    rest_days = [d for d in all_days if d not in active_days]
+
+    # Create "Rest day" rows with midnight timestamps
+    rest_df = pd.DataFrame(
+        {
+            "Aktivitetstyp": "Rest day",
+            "Datum": pd.to_datetime(
+                rest_days
+            ),  # convert back to Timestamps at midnight
+            "Namn": "Rest day",
+            "Rest count": 1,
+        }
+    )
+
+    # Combine and sort
+    df_with_rest = pd.concat([df, rest_df], ignore_index=True)
+    df_with_rest = df_with_rest.sort_values("Datum").reset_index(drop=True)
+
+    # Drop helper column
+    df_with_rest = df_with_rest.drop(columns=["DateOnly"])
+
+    return df_with_rest
