@@ -10,6 +10,15 @@ from metrics import (
 )
 
 
+def get_user_data_section():
+    csv_file = st.file_uploader("Upload Garmin CSV file", type="csv")
+
+    if csv_file is None:
+        return None
+
+    return load_data(csv_file)
+
+
 def activity_metrics_over_time_section(df):
     df = df.copy()
     st.header("Activity metrics over time")
@@ -75,11 +84,11 @@ def plot_metric_tab(df, metric, freq, fmt, tab, start_date, end_date):
 def main():
     st.title("Garmin extended data")
 
-    csv_file = st.file_uploader("Upload Garmin CSV file", type="csv")
+    df = get_user_data_section()
+    if df is None:
+        return
 
-    if csv_file is not None:
-        df = load_data(csv_file)
-        activity_metrics_over_time_section(df)
+    activity_metrics_over_time_section(df)
 
 
 if __name__ == "__main__":
