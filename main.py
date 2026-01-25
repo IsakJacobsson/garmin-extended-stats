@@ -19,7 +19,7 @@ SUMMABLE_COLUMNS = [
 
 
 def activity_metrics_over_time_section(df):
-    st.header("Activity Metrics Over Time")
+    st.header("Activity metrics over time")
 
     col1, col2 = st.columns(2)
 
