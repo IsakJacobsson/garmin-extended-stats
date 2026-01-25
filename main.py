@@ -33,7 +33,7 @@ def activity_metrics_over_time_section(df):
         valid_metrics = get_valid_metrics(activity_df)
         selected_metric = metric_selector(valid_metrics)
 
-    activity_df["Tid"] = activity_df["Tid"].dt.total_seconds() / 3600  # hours
+    activity_df = convert_time_column_to_hours(activity_df)
 
     if len(selected_activities) == 0:
         st.warning("Please select at least one activity type.")
@@ -42,37 +42,11 @@ def activity_metrics_over_time_section(df):
     # Create tabs for different resolutions
     tab_day, tab_week, tab_month, tab_year = st.tabs(["Day", "Week", "Month", "Year"])
 
-    def plot_metric(period_freq, fmt, tab_label):
-        temp_df = activity_df.copy()
-
-        # Convert to Period (do NOT convert to start_time yet)
-        temp_df["Period"] = temp_df["Datum"].dt.to_period(period_freq)
-
-        # Aggregate with PeriodIndex
-        agg_df = temp_df.groupby("Period")[selected_metric].sum().sort_index()
-
-        # Create full period range (including missing periods)
-        full_range = pd.period_range(
-            start=agg_df.index.min(),
-            end=pd.Timestamp.today().to_period(period_freq),
-            freq=period_freq,
-        )
-
-        # Reindex to include missing periods
-        agg_df = agg_df.reindex(full_range, fill_value=0)
-
-        # Convert to timestamps just for plotting / labels
-        plot_df = agg_df.to_timestamp(how="start").to_frame(name=selected_metric)
-        plot_df["PeriodStr"] = plot_df.index.strftime(fmt)
-
-        with tab_label:
-            st.bar_chart(plot_df.set_index("PeriodStr")[selected_metric])
-
     # Plot each tab
-    plot_metric("D", "%Y-%m-%d", tab_day)  # Day
-    plot_metric("W", "%Y-%W", tab_week)  # Week
-    plot_metric("M", "%Y-%m", tab_month)  # Month
-    plot_metric("Y", "%Y", tab_year)  # Year
+    plot_metric_tab(activity_df, selected_metric, "D", "%Y-%m-%d", tab_day)  # Day
+    plot_metric_tab(activity_df, selected_metric, "W", "%Y-%W", tab_week)  # Week
+    plot_metric_tab(activity_df, selected_metric, "M", "%Y-%m", tab_month)  # Month
+    plot_metric_tab(activity_df, selected_metric, "Y", "%Y", tab_year)  # Year
 
 
 def activity_multiselector(df):
@@ -102,6 +76,42 @@ def get_valid_metrics(df):
         if not df[col].isna().any():
             valid_metrics.append(col)
     return valid_metrics
+
+
+def convert_time_column_to_hours(df):
+    df = df.copy()
+    if "Tid" in df.columns:
+        df["Tid"] = df["Tid"].dt.total_seconds() / 3600
+    return df
+
+
+def plot_metric_tab(df, metric, freq, fmt, tab):
+    agg_df = aggregate_metric_over_time(df, metric, freq)
+
+    plot_df = agg_df.copy()
+    plot_df.index = plot_df.index.to_timestamp(how="start")
+    plot_df["PeriodStr"] = plot_df.index.strftime(fmt)
+
+    with tab:
+        st.bar_chart(plot_df.set_index("PeriodStr")[metric])
+
+
+def aggregate_metric_over_time(df, metric, period_freq, end_period=None):
+    df = df.copy()
+    df["Period"] = df["Datum"].dt.to_period(period_freq)
+
+    agg = df.groupby("Period")[metric].sum().sort_index()
+
+    if end_period is None:
+        end_period = pd.Timestamp.today().to_period(period_freq)
+
+    full_range = pd.period_range(
+        start=agg.index.min(),
+        end=end_period,
+        freq=period_freq,
+    )
+
+    return agg.reindex(full_range, fill_value=0).to_frame(metric)
 
 
 def main():
