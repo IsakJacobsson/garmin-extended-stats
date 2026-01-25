@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 
 from load_data import load_data
-from metrics import aggregate_metric_over_time, get_activities, get_valid_metrics
+from metrics import aggregate_metric_over_time, get_activities, get_summable_metrics
 
 
 def activity_metrics_over_time_section(df):
@@ -20,7 +20,7 @@ def activity_metrics_over_time_section(df):
     activity_df = filter_activities(df, selected_activities)
 
     with col2:
-        valid_metrics = get_valid_metrics(activity_df)
+        valid_metrics = get_summable_metrics(activity_df)
         selected_metric = selectbox(valid_metrics, "Metric")
 
     activity_df = convert_time_column_to_hours(activity_df)

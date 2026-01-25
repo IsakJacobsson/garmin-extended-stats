@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from metrics import aggregate_metric_over_time, get_activities, get_valid_metrics
+from metrics import aggregate_metric_over_time, get_activities, get_summable_metrics
 
 
 @pytest.fixture
@@ -26,30 +26,30 @@ def test_get_activites():
     assert set(activities) == {"Löpning", "Cycling", "Styrketräning"}
 
 
-def test_get_valid_metrics_excludes_columns_with_nan(sample_df):
-    valid = get_valid_metrics(sample_df)
+def test_get_summable_metrics_excludes_columns_with_nan(sample_df):
+    summable = get_summable_metrics(sample_df)
 
-    assert "Distans" in valid
-    assert "Tid" in valid
-    assert "Kalorier" in valid
+    assert "Distans" in summable
+    assert "Tid" in summable
+    assert "Kalorier" in summable
 
     # Has NaN → should be excluded
-    assert "Steg" not in valid
+    assert "Steg" not in summable
 
 
-def test_get_valid_metrics_ignores_missing_columns(sample_df):
-    valid = get_valid_metrics(sample_df)
+def test_get_summable_metrics_ignores_missing_columns(sample_df):
+    summable = get_summable_metrics(sample_df)
 
     # Column does not exist in df
-    assert "Total stigning" not in valid
+    assert "Total stigning" not in summable
 
 
-def test_get_valid_metrics_empty_dataframe():
+def test_get_summable_metrics_empty_dataframe():
     df = pd.DataFrame()
 
-    valid = get_valid_metrics(df)
+    summable = get_summable_metrics(df)
 
-    assert valid == []
+    assert summable == []
 
 
 def test_aggregate_metric_over_time_weekly(sample_df):

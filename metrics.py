@@ -19,7 +19,7 @@ def get_activities(df):
     return df["Aktivitetstyp"].unique()
 
 
-def get_valid_metrics(df):
+def get_summable_metrics(df):
     valid_metrics = []
     for col in SUMMABLE_COLUMNS:
         if col in df.columns and not df[col].isna().any():
