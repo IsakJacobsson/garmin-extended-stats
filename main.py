@@ -2,20 +2,7 @@ import pandas as pd
 import streamlit as st
 
 from load_data import load_data
-
-SUMMABLE_COLUMNS = [
-    "Distans",
-    "Tid",
-    "Total stigning",
-    "Steg",
-    "Kalorier",
-    "Aerobisk Training Effect",
-    "Total stigning",
-    "Totalt nedför",
-    "Totalt antal årtag",
-    "Totalt antal repetitioner",
-    "Totalt antal set",
-]
+from metrics import aggregate_metric_over_time, get_valid_metrics
 
 
 def activity_metrics_over_time_section(df):
@@ -69,14 +56,6 @@ def filter_activities(df, activities):
     return df
 
 
-def get_valid_metrics(df):
-    valid_metrics = []
-    for col in SUMMABLE_COLUMNS:
-        if col in df.columns and not df[col].isna().any():
-            valid_metrics.append(col)
-    return valid_metrics
-
-
 def convert_time_column_to_hours(df):
     df = df.copy()
     if "Tid" in df.columns:
@@ -93,24 +72,6 @@ def plot_metric_tab(df, metric, freq, fmt, tab):
 
     with tab:
         st.bar_chart(plot_df.set_index("PeriodStr")[metric])
-
-
-def aggregate_metric_over_time(df, metric, period_freq, end_period=None):
-    df = df.copy()
-    df["Period"] = df["Datum"].dt.to_period(period_freq)
-
-    agg = df.groupby("Period")[metric].sum().sort_index()
-
-    if end_period is None:
-        end_period = pd.Timestamp.today().to_period(period_freq)
-
-    full_range = pd.period_range(
-        start=agg.index.min(),
-        end=end_period,
-        freq=period_freq,
-    )
-
-    return agg.reindex(full_range, fill_value=0).to_frame(metric)
 
 
 def main():
