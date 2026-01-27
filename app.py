@@ -1,3 +1,4 @@
+import pandas as pd
 import streamlit as st
 
 from filters import filter_activities
@@ -6,8 +7,8 @@ from metrics import (
     aggregate_metric_over_time,
     convert_time_column_to_hours,
     get_activities,
+    get_days_without_activity,
     get_summable_metrics,
-    insert_rest_days,
 )
 
 
@@ -106,9 +107,14 @@ def rest_day_stats_section(df):
 
     df = filter_activities(df, active_activities)
 
-    df = insert_rest_days(df, start_date, end_date)
+    rest_days = get_days_without_activity(df, start_date, end_date)
 
-    df = filter_activities(df, ["Rest day"])
+    rest_days_df = pd.DataFrame(
+        {
+            "Datum": rest_days,
+            "Rest day": 1,
+        }
+    )
 
     # Create tabs for different resolutions
     tab_info = [
@@ -118,16 +124,14 @@ def rest_day_stats_section(df):
         ("Year", "Y", "%Y"),
     ]
 
-    selected_metric = "Rest count"
-
     tabs = st.tabs([label for label, _, _ in tab_info])
 
     for tab, (_, freq, date_format) in zip(tabs, tab_info):
         agg_df = aggregate_metric_over_time(
-            df, selected_metric, freq, start_date, end_date
+            rest_days_df, "Rest day", freq, start_date, end_date
         )
         with tab:
-            plot_metric(agg_df, selected_metric, date_format)
+            plot_metric(agg_df, "Rest day", date_format)
 
 
 def main():
