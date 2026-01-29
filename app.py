@@ -14,8 +14,8 @@ from metrics import (
 tab_info = [
     ("Day", "D", "%Y-%m-%d"),
     ("Week", "W", "%Y-%W"),
-    ("Month", "M", "%Y-%m"),
-    ("Year", "Y", "%Y"),
+    ("Month", "ME", "%Y-%m"),
+    ("Year", "YE", "%Y"),
 ]
 
 

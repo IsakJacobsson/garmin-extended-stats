@@ -22,15 +22,24 @@ def convert_time_column_to_hours(df):
     return df
 
 
-def aggregate_metric_over_time(df, metric, period_freq, start, end):
-    df = df.copy()
-    df["Period"] = df.index.to_period(period_freq)
+def aggregate_metric_over_time(df, metric, freq, start, end):
+    start = start.normalize()
+    end = end.normalize()
 
-    agg = df.groupby("Period")[metric].sum().sort_index()
+    # Need to fix end date for years for some reason...
+    if freq == "YE":
+        end = end + pd.offsets.YearEnd(0)
 
-    full_range = pd.period_range(start=start, end=end, freq=period_freq)
+    out = (
+        df[metric]
+        .resample(freq)
+        .sum()
+        .reindex(pd.date_range(start, end, freq=freq))
+        .fillna(0)
+        .to_frame(metric)
+    )
 
-    return agg.reindex(full_range, fill_value=0).to_frame(metric)
+    return out
 
 
 def get_activities(df):

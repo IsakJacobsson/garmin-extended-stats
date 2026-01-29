@@ -15,12 +15,19 @@ from metrics import (
 def sample_df():
     return pd.DataFrame(
         {
-            "Distans": [5.0, 3.0, 10.0],
-            "Tid": [30, 20, 60],
-            "Kalorier": [300, 200, 600],
-            "Steg": [None, 4000, 8000],  # contains NaN
+            "Distans": [5.0, 3.0, 2.0, 10.0],
+            "Tid": [30, 20, 30, 60],
+            "Kalorier": [300, 200, 200, 600],
+            "Steg": [None, 4000, 3000, 8000],  # contains NaN
         },
-        index=pd.to_datetime(["2024-01-01", "2024-01-02", "2024-01-08"]),
+        index=pd.to_datetime(
+            [
+                "2024-01-01 13:12:11",
+                "2024-01-02 19:01:01",
+                "2024-01-02 22:01:01",
+                "2024-01-08 01:34:34",
+            ]
+        ),
     )
 
 
@@ -64,50 +71,79 @@ def test_aggregate_metric_over_time_weekly(sample_df):
     result = aggregate_metric_over_time(
         df=sample_df,
         metric="Distans",
-        period_freq="W",
-        start=pd.Timestamp("2024-01-01"),
-        end=pd.Timestamp("2024-01-18"),
+        freq="W",
+        start=pd.to_datetime("2024-01-01 12:12:13"),
+        end=pd.to_datetime("2024-01-14 12:12:13"),
     )
 
-    # Expect 3 weeks in range
-    assert len(result) == 3
+    expected = pd.DataFrame(
+        {
+            "Distans": [10.0, 10.0],
+        },
+        index=pd.to_datetime(["2024-01-07", "2024-01-14"]),
+    )
 
-    # Week 1: Jan 1 + Jan 2
-    assert result.iloc[0]["Distans"] == 8.0
-
-    # Week 2: Jan 8
-    assert result.iloc[1]["Distans"] == 10.0
-
-    # Week 3: no data → filled with 0
-    assert result.iloc[2]["Distans"] == 0
+    assert result.equals(expected)
 
 
 def test_aggregate_metric_over_time_daily(sample_df):
     result = aggregate_metric_over_time(
         df=sample_df,
         metric="Tid",
-        period_freq="D",
-        start=pd.Timestamp("2024-01-01"),
-        end=pd.Timestamp("2024-01-03"),
+        freq="D",
+        start=pd.to_datetime("2023-12-31 12:12:13"),
+        end=pd.to_datetime("2024-01-10 12:12:13"),
     )
 
-    assert result.loc[pd.Period("2024-01-01", freq="D"), "Tid"] == 30
-    assert result.loc[pd.Period("2024-01-02", freq="D"), "Tid"] == 20
+    expected = pd.DataFrame(
+        {
+            "Tid": [0.0, 30.0, 50.0, 0.0, 0.0, 0.0, 0.0, 0.0, 60.0, 0.0, 0.0],
+        },
+        index=pd.to_datetime(
+            [
+                "2023-12-31",
+                "2024-01-01",
+                "2024-01-02",
+                "2024-01-03",
+                "2024-01-04",
+                "2024-01-05",
+                "2024-01-06",
+                "2024-01-07",
+                "2024-01-08",
+                "2024-01-09",
+                "2024-01-10",
+            ]
+        ),
+    )
 
-    # Missing date → zero-filled
-    assert result.loc[pd.Period("2024-01-03", freq="D"), "Tid"] == 0
+    assert result.equals(expected)
 
 
-def test_aggregate_metric_over_time_does_not_modify_original_df(sample_df):
-    _ = aggregate_metric_over_time(
+def test_aggregate_metric_over_time_yearly(sample_df):
+    result = aggregate_metric_over_time(
         df=sample_df,
-        metric="Distans",
-        period_freq="W",
-        start=pd.Timestamp("2024-01-01"),
-        end=pd.Timestamp("2024-01-14"),
+        metric="Tid",
+        freq="YE",
+        start=pd.to_datetime("2023-12-31 12:12:13"),
+        end=pd.to_datetime("2025-01-10 12:12:13"),
     )
 
-    assert "Period" not in sample_df.columns
+    expected = pd.DataFrame(
+        {
+            "Tid": [0.0, 140.0, 0.0],
+        },
+        index=pd.to_datetime(
+            [
+                "2023-12-31",
+                "2024-12-31",
+                "2025-12-31",
+            ]
+        ),
+    )
+    print("result")
+    print(result)
+
+    assert result.equals(expected)
 
 
 def test_get_activites():
