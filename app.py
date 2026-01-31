@@ -4,11 +4,12 @@ import streamlit as st
 from filters import filter_activities
 from load_data import load_data
 from metrics import (
-    aggregate_metric_over_time,
+    aggregate_over_time,
     convert_time_column_to_hours,
     get_activities,
     get_days_without_activity,
     get_summable_metrics,
+    select_metric_and_drop_zeros,
 )
 
 tab_info = [
@@ -37,6 +38,10 @@ def activity_metrics_over_time_section(df):
         activities = get_activities(df)
         selected_activities = multiselect(activities, "Activity type")
 
+    if len(selected_activities) == 0:
+        st.warning("Please select at least one activity type.")
+        return
+
     df = filter_activities(df, selected_activities)
 
     with col2:
@@ -44,18 +49,15 @@ def activity_metrics_over_time_section(df):
         selected_metric = selectbox(valid_metrics, "Metric")
 
     df = convert_time_column_to_hours(df)
-
-    if len(selected_activities) == 0:
-        st.warning("Please select at least one activity type.")
-        return
+    df = select_metric_and_drop_zeros(df, selected_metric)
 
     # Create tabs for different resolutions
     tabs = st.tabs([label for label, _, _ in tab_info])
 
     for tab, (_, freq, date_format) in zip(tabs, tab_info):
-        agg_df = aggregate_metric_over_time(df, selected_metric, freq)
+        agg_df = aggregate_over_time(df, freq)
         with tab:
-            plot_metric(agg_df, selected_metric, date_format)
+            plot_metric(agg_df, date_format)
 
 
 def multiselect(choices, description):
@@ -74,11 +76,11 @@ def selectbox(choices, description):
     return selected
 
 
-def plot_metric(df, metric, fmt):
+def plot_metric(df, fmt):
     df = df.copy()
     df.index = df.index.strftime(fmt)
 
-    st.bar_chart(df[metric])
+    st.bar_chart(df)
 
 
 def rest_day_stats_section(df):
@@ -106,11 +108,9 @@ def rest_day_stats_section(df):
     # Create tabs for different resolutions
     tabs = st.tabs([label for label, _, _ in tab_info])
     for tab, (_, freq, date_format) in zip(tabs, tab_info):
-        agg_df = aggregate_metric_over_time(
-            rest_days_df, "Rest days", freq, start_date, end_date
-        )
+        agg_df = aggregate_over_time(rest_days_df, freq, start_date, end_date)
         with tab:
-            plot_metric(agg_df, "Rest days", date_format)
+            plot_metric(agg_df, date_format)
 
 
 def main():

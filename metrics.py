@@ -22,7 +22,7 @@ def convert_time_column_to_hours(df):
     return df
 
 
-def aggregate_metric_over_time(df, metric, freq, start=None, end=None):
+def aggregate_over_time(df, freq, start=None, end=None):
     if start is None:
         start = df.index.min()
     if end is None:
@@ -36,13 +36,15 @@ def aggregate_metric_over_time(df, metric, freq, start=None, end=None):
     if freq == "YE":
         end = end + pd.offsets.YearEnd(0)
 
+    col = df.columns[0]
+
     out = (
-        df[metric]
+        df[col]
         .resample(freq)
         .sum()
         .reindex(pd.date_range(start, end, freq=freq))
         .fillna(0)
-        .to_frame(metric)
+        .to_frame(col)
     )
 
     return out
@@ -70,3 +72,8 @@ def get_summable_metrics(df):
         if col in df.columns and not df[col].isna().any():
             valid_metrics.append(col)
     return valid_metrics
+
+
+def select_metric_and_drop_zeros(df, metric):
+    df = df[[metric]]
+    return df[df.iloc[:, 0] != 0]

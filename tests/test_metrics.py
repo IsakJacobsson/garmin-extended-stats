@@ -3,11 +3,12 @@ import pandas as pd
 import pytest
 
 from metrics import (
-    aggregate_metric_over_time,
+    aggregate_over_time,
     convert_time_column_to_hours,
     get_activities,
     get_days_without_activity,
     get_summable_metrics,
+    select_metric_and_drop_zeros,
 )
 
 
@@ -16,9 +17,27 @@ def sample_df():
     return pd.DataFrame(
         {
             "Distans": [5.0, 3.0, 2.0, 10.0],
+        },
+        index=pd.to_datetime(
+            [
+                "2024-01-01 13:12:11",
+                "2024-01-02 19:01:01",
+                "2024-01-02 22:01:01",
+                "2024-01-08 01:34:34",
+            ]
+        ),
+    )
+
+
+@pytest.fixture
+def sample_df_2():
+    return pd.DataFrame(
+        {
+            "Distans": [5.0, 3.0, 2.0, 10.0],
             "Tid": [30, 20, 30, 60],
             "Kalorier": [300, 200, 200, 600],
             "Steg": [None, 4000, 3000, 8000],  # contains NaN
+            "Totalt nedför": [32, 0, 0, 44],
         },
         index=pd.to_datetime(
             [
@@ -67,10 +86,10 @@ def test_convert_time_column_to_hours_outputs_float():
     assert result["Tid"].dtype == "float64"
 
 
-def test_aggregate_metric_over_time_weekly(sample_df):
-    result = aggregate_metric_over_time(
+def test_aggregate_over_time_weekly(sample_df):
+
+    result = aggregate_over_time(
         df=sample_df,
-        metric="Distans",
         freq="W",
         start=pd.to_datetime("2024-01-01 12:12:13"),
         end=pd.to_datetime("2024-01-14 12:12:13"),
@@ -86,10 +105,9 @@ def test_aggregate_metric_over_time_weekly(sample_df):
     assert result.equals(expected)
 
 
-def test_aggregate_metric_over_time_daily(sample_df):
-    result = aggregate_metric_over_time(
+def test_aggregate_over_time_daily(sample_df):
+    result = aggregate_over_time(
         df=sample_df,
-        metric="Tid",
         freq="D",
         start=pd.to_datetime("2023-12-31 12:12:13"),
         end=pd.to_datetime("2024-01-10 12:12:13"),
@@ -97,7 +115,7 @@ def test_aggregate_metric_over_time_daily(sample_df):
 
     expected = pd.DataFrame(
         {
-            "Tid": [0.0, 30.0, 50.0, 0.0, 0.0, 0.0, 0.0, 0.0, 60.0, 0.0, 0.0],
+            "Distans": [0.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0],
         },
         index=pd.to_datetime(
             [
@@ -119,10 +137,9 @@ def test_aggregate_metric_over_time_daily(sample_df):
     assert result.equals(expected)
 
 
-def test_aggregate_metric_over_time_yearly(sample_df):
-    result = aggregate_metric_over_time(
+def test_aggregate_over_time_yearly(sample_df):
+    result = aggregate_over_time(
         df=sample_df,
-        metric="Tid",
         freq="YE",
         start=pd.to_datetime("2023-12-31 12:12:13"),
         end=pd.to_datetime("2025-01-10 12:12:13"),
@@ -130,7 +147,7 @@ def test_aggregate_metric_over_time_yearly(sample_df):
 
     expected = pd.DataFrame(
         {
-            "Tid": [0.0, 140.0, 0.0],
+            "Distans": [0.0, 20.0, 0.0],
         },
         index=pd.to_datetime(
             [
@@ -140,8 +157,6 @@ def test_aggregate_metric_over_time_yearly(sample_df):
             ]
         ),
     )
-    print("result")
-    print(result)
 
     assert result.equals(expected)
 
@@ -204,19 +219,18 @@ def test_days_without_activity_no_gaps():
     assert result.equals(expected)
 
 
-def test_get_summable_metrics_excludes_columns_with_nan(sample_df):
-    summable = get_summable_metrics(sample_df)
+def test_get_summable_metrics_excludes_columns_with_nan(sample_df_2):
+    summable = get_summable_metrics(sample_df_2)
 
-    assert "Distans" in summable
-    assert "Tid" in summable
-    assert "Kalorier" in summable
+    required = {"Distans", "Tid", "Kalorier", "Totalt nedför"}
+    assert required.issubset(summable)
 
     # Has NaN → should be excluded
     assert "Steg" not in summable
 
 
-def test_get_summable_metrics_ignores_missing_columns(sample_df):
-    summable = get_summable_metrics(sample_df)
+def test_get_summable_metrics_ignores_missing_columns(sample_df_2):
+    summable = get_summable_metrics(sample_df_2)
 
     # Column does not exist in df
     assert "Total stigning" not in summable
@@ -228,3 +242,21 @@ def test_get_summable_metrics_empty_dataframe():
     summable = get_summable_metrics(df)
 
     assert summable == []
+
+
+def test_select_metric_and_drop_zeros(sample_df_2):
+    res = select_metric_and_drop_zeros(sample_df_2, "Totalt nedför")
+
+    expected = pd.DataFrame(
+        {
+            "Totalt nedför": [32, 44],
+        },
+        index=pd.to_datetime(
+            [
+                "2024-01-01 13:12:11",
+                "2024-01-08 01:34:34",
+            ]
+        ),
+    )
+
+    assert res.equals(expected)
