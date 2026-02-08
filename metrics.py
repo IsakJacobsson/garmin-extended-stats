@@ -66,20 +66,20 @@ def get_days_without_activity(df: pd.DataFrame) -> pd.Series:
     return pd.Series(1, index=missing_days)
 
 
-def col_exists_and_has_no_na(col_name: str, df: pd.DataFrame) -> bool:
-    exists = col_name in df.columns
-    if not exists:
-        return False
-    has_na = bool(df[col_name].isna().any())
-    return not has_na
-
-
 def get_summable_metrics(df: pd.DataFrame) -> list[str]:
     valid_metrics = []
     for col in SUMMABLE_COLUMNS:
         if col_exists_and_has_no_na(col, df):
             valid_metrics.append(col)
     return valid_metrics
+
+
+def col_exists_and_has_no_na(col_name: str, df: pd.DataFrame) -> bool:
+    exists = col_name in df.columns
+    if not exists:
+        return False
+    has_na = bool(df[col_name].isna().any())
+    return not has_na
 
 
 def select_metric_and_drop_zeros(df: pd.DataFrame, metric: str) -> pd.Series:
