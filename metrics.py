@@ -73,7 +73,7 @@ def get_days_without_activity(
 def get_summable_metrics(df: pd.DataFrame) -> list[str]:
     valid_metrics = []
     for col in SUMMABLE_COLUMNS:
-        if col_exists_and_has_no_na(col, df):
+        if col_exists_and_has_no_na(col, df) and col_has_non_zero_values(col, df):
             valid_metrics.append(col)
     return valid_metrics
 
@@ -87,6 +87,11 @@ def col_exists_and_has_no_na(col_name: str, df: pd.DataFrame) -> bool:
         return False
     has_na = bool(df[col_name].isna().any())
     return not has_na
+
+
+def col_has_non_zero_values(col_name: str, df: pd.DataFrame) -> bool:
+    series = df[col_name]
+    return (series != 0).any()
 
 
 def select_metric_and_drop_zeros(df: pd.DataFrame, metric: str) -> pd.Series:

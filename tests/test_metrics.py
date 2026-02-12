@@ -240,6 +240,25 @@ def test_get_summable_metrics_empty_dataframe():
     assert summable == []
 
 
+def test_get_summable_metrics_excludes_columns_with_only_zeros():
+    # Create a DataFrame where some columns are all zeros
+    df = pd.DataFrame(
+        {
+            "Distans": [0, 0, 0],
+            "Tid": [1, 2, 3],  # valid
+            "Kalorier": [0, 0, 0],  # all zeros → excluded
+            "Totalt nedför": [5, 0, 2],  # valid
+        }
+    )
+
+    summable = get_summable_metrics(df)
+
+    assert "Tid" in summable
+    assert "Totalt nedför" in summable
+    assert "Distans" not in summable
+    assert "Kalorier" not in summable
+
+
 def test_select_metric_and_drop_zeros(sample_df_2):
     res = select_metric_and_drop_zeros(sample_df_2, "Totalt nedför")
 
