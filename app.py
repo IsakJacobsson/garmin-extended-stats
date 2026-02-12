@@ -83,8 +83,8 @@ def selectbox(choices: list[str], description: str) -> str:
     return st.selectbox(description, choices)
 
 
-def rest_day_stats_section(df: pd.DataFrame):
-    st.header("Rest day stats")
+def rest_days_section(df: pd.DataFrame):
+    st.header("Rest days")
 
     # This has to be done before filtering the df, since the full period is
     # desired regardless of which activities are selected
@@ -92,12 +92,20 @@ def rest_day_stats_section(df: pd.DataFrame):
     end_date = df.index.max()
 
     activities = get_activities(df)
-    active_activities = st.pills(
-        "Active day activity types",
+    rest_activities = st.multiselect(
+        "Activities to ignore when counting rest days",
         activities,
-        selection_mode="multi",
-        default=activities,
+        placeholder="All activities break rest by default",
     )
+
+    st.caption(
+        "Days containing only these activities will still be counted as rest days."
+    )
+
+    rest_set = set(rest_activities)
+    active_activities = [
+        activity for activity in activities if activity not in rest_set
+    ]
 
     df = filter_activities(df, active_activities)
 
@@ -115,7 +123,7 @@ def main():
 
     activity_metrics_over_time_section(df)
 
-    rest_day_stats_section(df)
+    rest_days_section(df)
 
 
 if __name__ == "__main__":
