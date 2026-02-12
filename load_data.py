@@ -1,12 +1,12 @@
 import pandas as pd
 
 
-def min_sec_to_deltatime_format(s: str) -> str:
-    return "00:" + s
+def min_sec_to_deltatime_format(s: int) -> str:
+    return "00:" + str(s)
 
 
 def load_data(csv_path: str) -> pd.DataFrame:
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(csv_path, decimal=".", thousands=",", na_values=["--"])
 
     # Strings
     str_cols = ["Aktivitetstyp", "Namn", "Medelkontakttidsbalans"]
@@ -26,60 +26,11 @@ def load_data(csv_path: str) -> pd.DataFrame:
     df["Datum"] = pd.to_datetime(df["Datum"], errors="coerce")
     df = df.set_index("Datum")
 
-    # 'Steg' reformatted from 6,123 to 6123
-    if "Steg" in df.columns:
-        df["Steg"] = df["Steg"].str.replace(",", "")
-
-    # Some activites messure in meters, we want to convert to km, e.g., 1,000 (m) to 1.0 (km)
-    df["Distans"] = df["Distans"].str.replace(",", ".")
-
-    # Numeric columns (floats)
-    numeric_cols = [
-        "Distans",
-        "Kalorier",
-        "Medelpuls",
-        "Maxpuls",
-        "Aerobisk Training Effect",
-        "Medellöpkadens",
-        "Maximal löpkadens",
-        "Total stigning",
-        "Totalt nedför",
-        "Medelsteglängd",
-        "Medelvärde för vertikal kvot",
-        "Medelvärde för vertikal rörelse",
-        "Medeltid för markkontakt",
-        "Normalized Power® (NP®)",
-        "Training Stress Score®",
-        "Med. kraft",
-        "Maxkraft",
-        "Totalt antal årtag",
-        "Medel-Swolf",
-        "Medelårtagstempo",
-        "Steg",
-        "Totalt antal repetitioner",
-        "Totalt antal set",
-        "Urladdning av Body Battery",
-        "Minsta temperatur",
-        "Antal varv",
-        "Maximal temperatur",
-        "Genomsnittlig andning",
-        "Minsta andningshastighet",
-        "Maximal andningshastighet",
-        "Stressändring",
-        "Medestress",
-        "Maxbelastning",
-        "Min. höjd",
-        "Max. höjd",
-    ]
-    for col in numeric_cols:
-        if col in df.columns:
-            df[col] = pd.to_numeric(
-                df[col]
-                .replace("--", pd.NA)
-                .astype(str)
-                .str.replace(",", ".", regex=False),
-                errors="coerce",
-            )
+    # Convert all activity distances to km
+    meter_activities = ["Simbassäng", "Simning"]
+    mask = df["Aktivitetstyp"].isin(meter_activities)
+    # Convert only those rows from meters to km
+    df.loc[mask, "Distans"] = df.loc[mask, "Distans"] / 1000.0
 
     min_sec_cols = ["Medeltempo", "Bästa tempo"]
     for col in min_sec_cols:

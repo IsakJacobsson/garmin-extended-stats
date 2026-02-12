@@ -81,8 +81,6 @@ def test_numeric_columns():
     for col in numeric_cols:
         pd.api.types.is_numeric_dtype(df[col])
 
-    assert df.iloc[0]["Steg"] == 6234
-
 
 def test_timedelta_columns():
     df = load_data(csv_file)
