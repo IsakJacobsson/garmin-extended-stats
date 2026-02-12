@@ -44,7 +44,13 @@ def activity_metrics_over_time_section(df: pd.DataFrame) -> None:
 
     with col1:
         activities = get_activities(df)
-        selected_activities = multiselect(activities, "Activity type")
+        default = activities[0] if len(activities) > 0 else None
+        selected_activities = st.multiselect(
+            "Activity type",
+            activities,
+            default=default,
+            placeholder="Select activity types",
+        )
 
     has_selection = len(selected_activities) > 0
 
@@ -52,9 +58,9 @@ def activity_metrics_over_time_section(df: pd.DataFrame) -> None:
         filtered_df = filter_activities(df, selected_activities)
         valid_metrics = get_summable_metrics(filtered_df)
 
-        selected_metric = selectbox(
-            valid_metrics,
+        selected_metric = st.selectbox(
             "Metric",
+            valid_metrics,
         )
 
     if not has_selection:
@@ -66,21 +72,6 @@ def activity_metrics_over_time_section(df: pd.DataFrame) -> None:
     metric_data = select_metric_and_drop_zeros(df, selected_metric)
 
     aggregation_bar_plot(metric_data)
-
-
-def multiselect(choices: list[str], description: str) -> list[str]:
-    default = choices[0] if len(choices) > 0 else None
-    selected = st.multiselect(
-        description,
-        choices,
-        default=default,
-        placeholder="Select activity types",
-    )
-    return selected
-
-
-def selectbox(choices: list[str], description: str) -> str:
-    return st.selectbox(description, choices)
 
 
 def rest_days_section(df: pd.DataFrame):
