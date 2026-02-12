@@ -82,6 +82,9 @@ def col_exists_and_has_no_na(col_name: str, df: pd.DataFrame) -> bool:
     exists = col_name in df.columns
     if not exists:
         return False
+    empty_col = df[col_name].empty
+    if empty_col:
+        return False
     has_na = bool(df[col_name].isna().any())
     return not has_na
 

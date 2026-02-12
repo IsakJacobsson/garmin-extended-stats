@@ -46,15 +46,22 @@ def activity_metrics_over_time_section(df: pd.DataFrame) -> None:
         activities = get_activities(df)
         selected_activities = multiselect(activities, "Activity type")
 
-    if len(selected_activities) == 0:
-        st.warning("Please select at least one activity type.")
+    has_selection = len(selected_activities) > 0
+
+    with col2:
+        filtered_df = filter_activities(df, selected_activities)
+        valid_metrics = get_summable_metrics(filtered_df)
+
+        selected_metric = selectbox(
+            valid_metrics,
+            "Metric",
+        )
+
+    if not has_selection:
+        st.warning("Select at least one activity type to generate a plot.")
         return
 
     df = filter_activities(df, selected_activities)
-
-    with col2:
-        valid_metrics = get_summable_metrics(df)
-        selected_metric = selectbox(valid_metrics, "Metric")
 
     metric_data = select_metric_and_drop_zeros(df, selected_metric)
 

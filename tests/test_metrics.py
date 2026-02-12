@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 
 from metrics import (
+    SUMMABLE_COLUMNS,
     aggregate_over_time,
     convert_time_column_to_hours,
     get_activities,
@@ -230,10 +231,12 @@ def test_get_summable_metrics_ignores_missing_columns(sample_df_2):
 
 
 def test_get_summable_metrics_empty_dataframe():
-    df = pd.DataFrame()
+    # Create an empty DataFrame with the same columns as SUMMABLE_COLUMNS
+    df = pd.DataFrame(columns=SUMMABLE_COLUMNS)
 
     summable = get_summable_metrics(df)
 
+    # Since the DataFrame has no rows, no metrics should be considered summable
     assert summable == []
 
 
