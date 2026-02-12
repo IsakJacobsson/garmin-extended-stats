@@ -107,7 +107,7 @@ def rest_day_stats_section(df: pd.DataFrame):
 
 
 def main():
-    st.title("Garmin extended stats")
+    st.title("Garmin activity analyzer")
 
     df = get_user_data_section()
     if df is None:
