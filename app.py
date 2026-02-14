@@ -9,14 +9,7 @@ from metrics import (
     get_summable_metrics,
     select_metric_and_drop_zeros,
 )
-from plot import aggregation_bar_plot
-
-tab_info = [
-    ("Day", "D", "%Y-%m-%d"),
-    ("Week", "W", "%Y-%W"),
-    ("Month", "ME", "%Y-%m"),
-    ("Year", "YE", "%Y"),
-]
+from plots import aggregation_bar_plot
 
 
 def get_user_data_section() -> pd.DataFrame:
